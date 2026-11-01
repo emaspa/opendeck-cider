@@ -1,0 +1,245 @@
+{
+	"Name": "Cider",
+	"Description": "Control Cider, the Apple Music client: playback, now playing artwork, shuffle, repeat, love, library and volume, with live state on keys and dials.",
+	"Author": "Emanuele Sparvoli",
+	"Version": "0.1.0",
+	"SDKVersion": 2,
+	"CodePath": "plugin.mjs",
+	"Icon": "icons/plugin",
+	"Category": "Cider",
+	"CategoryIcon": "icons/category",
+	"URL": "https://cider.sh",
+	"OS": [
+		{
+			"Platform": "linux"
+		}
+	],
+	"Actions": [
+		{
+			"Name": "Play / Pause",
+			"UUID": "com.emaspa.cider.playpause",
+			"Icon": "icons/playpause",
+			"Tooltip": "Toggle playback",
+			"Controllers": [
+				"Keypad"
+			],
+			"SupportedInMultiActions": true,
+			"PropertyInspectorPath": "propertyInspector/settings.html",
+			"States": [
+				{
+					"Image": "icons/playpause"
+				}
+			]
+		},
+		{
+			"Name": "Next Track",
+			"UUID": "com.emaspa.cider.next",
+			"Icon": "icons/next",
+			"Tooltip": "Skip to the next track; hold to fast-forward",
+			"Controllers": [
+				"Keypad"
+			],
+			"SupportedInMultiActions": true,
+			"PropertyInspectorPath": "propertyInspector/settings.html",
+			"States": [
+				{
+					"Image": "icons/next"
+				}
+			]
+		},
+		{
+			"Name": "Previous Track",
+			"UUID": "com.emaspa.cider.previous",
+			"Icon": "icons/previous",
+			"Tooltip": "Go to the previous track; hold to rewind",
+			"Controllers": [
+				"Keypad"
+			],
+			"SupportedInMultiActions": true,
+			"PropertyInspectorPath": "propertyInspector/settings.html",
+			"States": [
+				{
+					"Image": "icons/previous"
+				}
+			]
+		},
+		{
+			"Name": "Now Playing",
+			"UUID": "com.emaspa.cider.nowplaying",
+			"Icon": "icons/nowplaying",
+			"Tooltip": "Album artwork with title, artist and progress",
+			"Controllers": [
+				"Keypad"
+			],
+			"SupportedInMultiActions": true,
+			"PropertyInspectorPath": "propertyInspector/settings.html",
+			"States": [
+				{
+					"Image": "icons/nowplaying"
+				}
+			],
+			"UserTitleEnabled": false
+		},
+		{
+			"Name": "Shuffle",
+			"UUID": "com.emaspa.cider.shuffle",
+			"Icon": "icons/shuffle",
+			"Tooltip": "Toggle shuffle",
+			"Controllers": [
+				"Keypad"
+			],
+			"SupportedInMultiActions": true,
+			"PropertyInspectorPath": "propertyInspector/settings.html",
+			"States": [
+				{
+					"Image": "icons/shuffle"
+				}
+			]
+		},
+		{
+			"Name": "Repeat",
+			"UUID": "com.emaspa.cider.repeat",
+			"Icon": "icons/repeat",
+			"Tooltip": "Cycle repeat: off, all, one",
+			"Controllers": [
+				"Keypad"
+			],
+			"SupportedInMultiActions": true,
+			"PropertyInspectorPath": "propertyInspector/settings.html",
+			"States": [
+				{
+					"Image": "icons/repeat"
+				}
+			]
+		},
+		{
+			"Name": "Love",
+			"UUID": "com.emaspa.cider.love",
+			"Icon": "icons/love",
+			"Tooltip": "Love the current track, or remove the love",
+			"Controllers": [
+				"Keypad"
+			],
+			"SupportedInMultiActions": true,
+			"PropertyInspectorPath": "propertyInspector/settings.html",
+			"States": [
+				{
+					"Image": "icons/love"
+				}
+			]
+		},
+		{
+			"Name": "Add to Library",
+			"UUID": "com.emaspa.cider.library",
+			"Icon": "icons/library",
+			"Tooltip": "Add the current track to your library, or remove it",
+			"Controllers": [
+				"Keypad"
+			],
+			"SupportedInMultiActions": true,
+			"PropertyInspectorPath": "propertyInspector/settings.html",
+			"States": [
+				{
+					"Image": "icons/library"
+				}
+			]
+		},
+		{
+			"Name": "Volume Up",
+			"UUID": "com.emaspa.cider.volumeup",
+			"Icon": "icons/volumeup",
+			"Tooltip": "Raise Cider's volume",
+			"Controllers": [
+				"Keypad"
+			],
+			"SupportedInMultiActions": true,
+			"PropertyInspectorPath": "propertyInspector/settings.html",
+			"States": [
+				{
+					"Image": "icons/volumeup"
+				}
+			]
+		},
+		{
+			"Name": "Volume Down",
+			"UUID": "com.emaspa.cider.volumedown",
+			"Icon": "icons/volumedown",
+			"Tooltip": "Lower Cider's volume",
+			"Controllers": [
+				"Keypad"
+			],
+			"SupportedInMultiActions": true,
+			"PropertyInspectorPath": "propertyInspector/settings.html",
+			"States": [
+				{
+					"Image": "icons/volumedown"
+				}
+			]
+		},
+		{
+			"Name": "Mute",
+			"UUID": "com.emaspa.cider.mute",
+			"Icon": "icons/mute",
+			"Tooltip": "Mute Cider, or restore the volume",
+			"Controllers": [
+				"Keypad"
+			],
+			"SupportedInMultiActions": true,
+			"PropertyInspectorPath": "propertyInspector/settings.html",
+			"States": [
+				{
+					"Image": "icons/mute"
+				}
+			]
+		},
+		{
+			"Name": "Volume Dial",
+			"UUID": "com.emaspa.cider.dialvolume",
+			"Icon": "icons/dialvolume",
+			"Tooltip": "Cider volume on a dial",
+			"Controllers": [
+				"Encoder"
+			],
+			"SupportedInMultiActions": false,
+			"PropertyInspectorPath": "propertyInspector/settings.html",
+			"States": [
+				{
+					"Image": "icons/dialvolume"
+				}
+			],
+			"Encoder": {
+				"layout": "layouts/volume.json",
+				"TriggerDescription": {
+					"Rotate": "Adjust volume",
+					"Push": "Mute / unmute",
+					"Touch": "Mute / unmute"
+				}
+			}
+		},
+		{
+			"Name": "Track Dial",
+			"UUID": "com.emaspa.cider.dialtrack",
+			"Icon": "icons/dialtrack",
+			"Tooltip": "Now playing on the touch strip with seek or skip on the dial",
+			"Controllers": [
+				"Encoder"
+			],
+			"SupportedInMultiActions": false,
+			"PropertyInspectorPath": "propertyInspector/settings.html",
+			"States": [
+				{
+					"Image": "icons/dialtrack"
+				}
+			],
+			"Encoder": {
+				"layout": "layouts/track.json",
+				"TriggerDescription": {
+					"Rotate": "Seek (or skip tracks)",
+					"Push": "Play / pause",
+					"Touch": "Play / pause",
+					"LongTouch": "Next track"
+				}
+			}
+		}
+	]
+}

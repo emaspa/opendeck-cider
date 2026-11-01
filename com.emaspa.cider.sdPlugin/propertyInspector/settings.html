@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><style>
+  :root { color-scheme: dark; }
+  body { font-family: sans-serif; background: #16181d; color: #e6e9f0; margin: 10px; font-size: 13px; }
+  label { display: block; margin: 12px 0 6px; color: #8b93a7; }
+  label.inline { display: flex; gap: 8px; align-items: center; color: #e6e9f0; }
+  select, input[type=number], input[type=text] { width: 100%; box-sizing: border-box; background: #23262f; color: #e6e9f0;
+    border: 1px solid #3a3f4c; border-radius: 5px; padding: 6px; }
+  option { background: #23262f; }
+  button { background: #fa2d48; color: #fff; border: 0; border-radius: 5px; padding: 6px 12px; cursor: pointer; }
+  button.quiet { background: transparent; color: #8b93a7; text-decoration: underline; padding: 0; }
+  #status { display: flex; align-items: center; gap: 8px; line-height: 1.4; }
+  #dot { width: 9px; height: 9px; border-radius: 50%; background: #5b6170; flex: none; }
+  #dot.ok { background: #30d158; } #dot.warn { background: #e6b450; } #dot.off { background: #ff453a; }
+  .row { display: flex; gap: 10px; align-items: center; margin-top: 8px; }
+  .section[hidden] { display: none; }
+  hr { border: 0; border-top: 1px solid #2c3039; margin: 14px 0 4px; }
+  .hint { color: #8b93a7; line-height: 1.4; margin-top: 6px; }
+</style></head>
+<body>
+  <div class="section" data-for="nowplaying" hidden>
+    <label for="press">When pressed</label>
+    <select id="press" data-setting="press">
+      <option value="toggle">Play / pause</option>
+      <option value="next">Next track</option>
+      <option value="none">Nothing</option>
+    </select>
+    <label class="inline"><input type="checkbox" id="showText" data-setting="showText" checked> Show title and artist</label>
+  </div>
+
+  <div class="section" data-for="volumeup volumedown" hidden>
+    <label for="stepKey">Step (%)</label>
+    <input type="number" id="stepKey" data-setting="step" min="1" max="50" placeholder="5">
+  </div>
+
+  <div class="section" data-for="dialvolume" hidden>
+    <label for="stepDial">Step per detent (%)</label>
+    <input type="number" id="stepDial" data-setting="step" min="1" max="20" placeholder="2">
+  </div>
+
+  <div class="section" data-for="dialtrack" hidden>
+    <label for="rotate">Turning the dial</label>
+    <select id="rotate" data-setting="rotate">
+      <option value="seek">Seeks within the track</option>
+      <option value="skip">Skips tracks</option>
+    </select>
+    <label for="seekStep">Seek per detent (seconds)</label>
+    <input type="number" id="seekStep" data-setting="seekStep" min="1" max="60" placeholder="5">
+  </div>
+
+  <hr id="split" hidden>
+  <label>Cider</label>
+  <div id="status"><span id="dot"></span><span id="statusText">Checking…</span></div>
+  <div class="row">
+    <button id="pair" hidden>Connect to Cider</button>
+    <button id="forget" class="quiet" hidden>Forget token</button>
+  </div>
+  <div id="hint" class="hint"></div>
+  <label for="launch">Command that starts Cider</label>
+  <input type="text" id="launch" placeholder="cider" spellcheck="false">
+  <div class="hint">A key pressed while Cider is closed runs this, e.g. <code>flatpak run sh.cider.genten</code>.</div>
+  <script src="settings.js"></script>
+</body></html>

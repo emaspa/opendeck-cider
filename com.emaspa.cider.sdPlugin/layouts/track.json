@@ -1,0 +1,15 @@
+{
+  "id": "com.emaspa.cider.track-layout",
+  "items": [
+    { "key": "art", "type": "pixmap", "rect": [6, 6, 88, 88] },
+    { "key": "track", "type": "text", "rect": [100, 8, 96, 22],
+      "font": { "size": 15, "weight": 700 }, "alignment": "left", "text-overflow": "ellipsis" },
+    { "key": "artist", "type": "text", "rect": [100, 30, 96, 18], "color": "#aeaeb2",
+      "font": { "size": 12, "weight": 400 }, "alignment": "left", "text-overflow": "ellipsis" },
+    { "key": "state", "type": "pixmap", "rect": [100, 56, 16, 16] },
+    { "key": "time", "type": "text", "rect": [120, 55, 76, 18],
+      "font": { "size": 12, "weight": 600 }, "alignment": "left", "text-overflow": "clip" },
+    { "key": "progress", "type": "bar", "rect": [100, 80, 94, 8], "value": 0,
+      "subtype": 0, "border_w": 0, "bar_bg_c": "#3a3a3c", "bar_fill_c": "#fa2d48" }
+  ]
+}

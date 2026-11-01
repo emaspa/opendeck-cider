@@ -1,0 +1,13 @@
+{
+  "name": "opendeck-cider",
+  "version": "0.1.0",
+  "description": "OpenDeck plugin for Cider, the Apple Music client",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "build": "node tools/make-icons.mjs && node tools/make-manifest.mjs",
+    "test": "node --test test/",
+    "install-plugin": "./install.sh"
+  }
+}

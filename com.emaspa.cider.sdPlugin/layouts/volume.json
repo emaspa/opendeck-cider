@@ -1,0 +1,12 @@
+{
+  "id": "com.emaspa.cider.volume-layout",
+  "items": [
+    { "key": "icon", "type": "pixmap", "rect": [16, 10, 24, 24] },
+    { "key": "label", "type": "text", "rect": [48, 10, 136, 24], "value": "Volume",
+      "font": { "size": 16, "weight": 600 }, "alignment": "left", "text-overflow": "ellipsis" },
+    { "key": "value", "type": "text", "rect": [16, 40, 168, 32],
+      "font": { "size": 24, "weight": 700 }, "alignment": "right" },
+    { "key": "indicator", "type": "bar", "rect": [16, 76, 168, 10], "value": 0,
+      "subtype": 0, "border_w": 0, "bar_bg_c": "#3a3a3c", "bar_fill_c": "#fa2d48" }
+  ]
+}

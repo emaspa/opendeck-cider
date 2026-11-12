@@ -1,5 +1,12 @@
 // Key faces and dial-strip pieces, drawn as SVG data URIs.
 // Glyphs are Material Icons paths (Apache 2.0) on a 24x24 grid.
+//
+// Every face takes an optional `vfd`: the OpenXLR skin's colours when that
+// skin draws its text in segments over unlit cells (one that sets
+// Ox.Text.Ghost). Then keys and dial strips draw as a vacuum fluorescent
+// display, as OpenXLR's own deck keys do. Without it they draw as below.
+
+import { segmented, segmentText, segmentWidth, fittedSize } from "./segment-text.mjs";
 
 export const ACCENT = "#fa2d48";
 const BG = "#1c1c1e";
@@ -52,7 +59,10 @@ const glyph = (name, x, y, size, color) =>
 
 // A plain control key: one glyph, optionally lit, with an optional caption.
 // `lines` are up to two short caption lines drawn under the glyph.
-export function keyFace({ icon, active = false, dim = false, lines = [] } = {}) {
+// `lamp` marks a key with an on/off state and `alert` one whose on state is a
+// warning (mute); only the display style draws them.
+export function keyFace({ icon, active = false, dim = false, lines = [], vfd = null, lamp = false, alert = false } = {}) {
+  if (vfd) return vfdKeyFace(vfd, { icon, active, dim, lines, lamp, alert });
   const color = dim ? "#48484a" : active ? ACCENT : INK;
   const caption = lines.filter(Boolean).slice(0, 2);
   const size = caption.length ? 64 : 84;
@@ -69,7 +79,8 @@ export function keyFace({ icon, active = false, dim = false, lines = [] } = {}) 
 
 // The now-playing key: album art filling the key, a scrim with title and
 // artist, a progress line, and a pause badge while paused.
-export function nowPlayingFace({ art, title, artist, progress = 0, playing = true, showText = true, dim = false } = {}) {
+export function nowPlayingFace({ art, title, artist, progress = 0, playing = true, showText = true, dim = false, vfd = null } = {}) {
+  if (vfd) return vfdNowPlayingFace(vfd, { art, title, artist, progress, playing, showText, dim });
   let body = art
     ? `<image href="${art}" x="0" y="0" width="144" height="144" preserveAspectRatio="xMidYMid slice"/>`
     : `<rect width="144" height="144" fill="#2c2c2e"/>` + glyph("note", 36, 24, 72, dim ? "#48484a" : MUTED);
@@ -92,6 +103,208 @@ export function nowPlayingFace({ art, title, artist, progress = 0, playing = tru
 // A small glyph for dial-strip pixmaps.
 export function stripIcon(icon, color = INK) {
   return svgUri(`<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24"><path d="${GLYPHS[icon]}" fill="${color}"/></svg>`);
+}
+
+// ---------- display style (OpenXLR VFD skins) ----------
+
+// Whether a skin's colours draw a display: its unlit segment cells are set.
+export const isDisplay = (colours) => !!colours && segmented(colours["Ox.Text.Ghost"]);
+
+// A colour scaled toward black, for the glass under a display's lettering.
+export function darken(hex, amount) {
+  const rgb = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+  return "#" + rgb.map((v) => Math.round(v * amount).toString(16).padStart(2, "0")).join("");
+}
+
+// The defs every display face shares: the halo lit lettering wears, the
+// light it spills into the glass, and the glass's fine mesh and sheen, as on
+// OpenXLR's display keys and the VFD Clock keys.
+function vfdDefs(lit) {
+  return `
+        <filter id="halo" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3.5"/></filter>
+        <filter id="soft" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2.5"/></filter>
+        <radialGradient id="spill" cx="72" cy="84" r="80" gradientUnits="userSpaceOnUse">
+          <stop stop-color="${lit}" stop-opacity="0.10"/><stop offset="1" stop-color="${lit}" stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="sheen" x1="0" y1="0" x2="0" y2="72" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#ffdcbe" stop-opacity="0.06"/><stop offset="1" stop-color="#ffdcbe" stop-opacity="0"/>
+        </linearGradient>
+        <pattern id="mesh" width="1.5" height="1.5" patternUnits="userSpaceOnUse">
+          <rect width="1.5" height="0.5" fill="#000" opacity="0.27"/><rect width="0.5" height="1.5" fill="#000" opacity="0.18"/>
+        </pattern>`;
+}
+
+// Something lit on the display: a soft halo of its own colour under it.
+const glowing = (inner, colour) =>
+  `<g filter="url(#halo)" opacity="0.8" color="${colour}" fill="${colour}">${inner}</g><g color="${colour}" fill="${colour}">${inner}</g>`;
+
+const shapeAt = (name, x, y, size) =>
+  `<path transform="translate(${x} ${y}) scale(${size / 24})" d="${GLYPHS[name]}"/>`;
+
+// The segment face has no accented letters; the base letter stands in.
+const plain = (text) => String(text ?? "").normalize("NFD").replace(/\p{M}/gu, "");
+
+// One line of segment lettering in `width` px: the text and the size to draw
+// it at. It shrinks from `size` down to `min`, and below that it is cut and
+// ends in an ellipsis.
+export function segmentLine(text, size, width, min = size) {
+  const s = plain(text);
+  if (segmentWidth(s, size) <= width) return { text: s, size };
+  if (segmentWidth(s, min) <= width) return { text: s, size: fittedSize(s, size, width) };
+  const chars = Array.from(s);
+  while (chars.length > 1 && segmentWidth(chars.join("").trimEnd() + "…", min) > width) chars.pop();
+  return { text: chars.join("").trimEnd() + "…", size: min };
+}
+
+// The display's glass behind a key's contents, and its mesh and sheen over
+// them. `over` goes on top of the glass, for a picture that keeps its colours.
+function vfdKey(c, body, defs = "", over = "") {
+  const lit = c["Ox.Text.Primary"];
+  return svgUri(`<svg xmlns="http://www.w3.org/2000/svg" width="288" height="288" viewBox="0 0 144 144">
+      <defs>${vfdDefs(lit)}${defs}</defs>
+      <rect width="144" height="144" fill="${darken(c["Ox.Text.Ghost"], 0.25)}"/>
+      <rect width="144" height="144" fill="url(#spill)"/>
+      <rect x="5" y="5" width="134" height="134" rx="16" fill="none" stroke="${darken(lit, 0.3)}" stroke-width="2"/>
+      ${body}
+      <rect width="144" height="144" fill="url(#mesh)"/>
+      <rect width="144" height="144" fill="url(#sheen)"/>
+      ${over}
+    </svg>`);
+}
+
+// A control key as a vacuum fluorescent display: near-black glass with a thin
+// frame, the glyph lit with a halo while on and dim while off, captions in
+// OpenXLR's segment face over unlit cells, and a lamp segment in the corner
+// of a key with an on/off state. A key without a state (next, volume up)
+// keeps its glyph lit; one that cannot act now shows only unlit cells.
+function vfdKeyFace(c, { icon, active, dim, lines, lamp, alert }) {
+  const ghost = c["Ox.Text.Ghost"], lit = c["Ox.Text.Primary"], unlit = c["Ox.Text.Muted"];
+  const accent = active && !dim ? c[alert ? "Ox.Led.Alert" : "Ox.Led.On"] : null;
+  const caption = lines.filter(Boolean).slice(0, 2);
+  const capY = caption.length ? 52 : 66;
+  const size = caption.length ? 64 : 84;
+  const shape = shapeAt(icon, 72 - size / 2, capY - size / 2, size);
+  const face = accent ? glowing(shape, accent)
+    : dim ? `<g fill="${ghost}">${shape}</g>`
+    : lamp ? `<g fill="${unlit}">${shape}</g>`
+    : glowing(shape, lit);
+  const lampBar = `<rect x="110" y="18" width="16" height="6" rx="1"/>`;
+  const lampSvg = !lamp ? "" : accent ? glowing(lampBar, accent) : `<g fill="${ghost}">${lampBar}</g>`;
+  const labels = caption.map((line, i) => {
+    const text = plain(line);
+    const base = text.length > 11 ? 19 : text.length > 8 ? 22 : 26;
+    const y = caption.length === 1 ? 126 : 106 + i * 24;
+    return segmentText(text, 72, y - 2, fittedSize(text, base * 0.8, 120),
+      { fill: dim ? unlit : lit, ghost, glow: dim ? null : "soft" });
+  }).join("");
+  return vfdKey(c, face + lampSvg + labels);
+}
+
+// A row of cells lit up to `fraction`, the display's progress bar.
+function ladder(fraction, { cells, w, gap, x0, y, h, ghost, fill }) {
+  const on = Math.round(Math.max(0, Math.min(1, fraction)) * cells);
+  let litCells = "", dark = "";
+  for (let i = 0; i < cells; i++) {
+    const cell = `<rect x="${x0 + i * (w + gap)}" y="${y}" width="${w}" height="${h}"/>`;
+    if (i < on) litCells += cell; else dark += cell;
+  }
+  return `<g fill="${ghost}">${dark}</g>` + (litCells ? glowing(litCells, fill) : "");
+}
+
+// The now-playing key as a display. The album cover shows as it is, in its
+// own colours, on the display glass. Title and artist sit
+// under it in segment lettering, then a ladder of cells for the position.
+// While paused a lit pause glyph shows beside or over the picture.
+function vfdNowPlayingFace(c, { art, title, artist, progress, playing, showText, dim }) {
+  const ghost = c["Ox.Text.Ghost"], lit = c["Ox.Text.Primary"], unlit = c["Ox.Text.Muted"];
+  if (!title) return vfdKey(c, `<g fill="${dim ? ghost : unlit}">${shapeAt("note", 36, 36, 72)}</g>`);
+  const on = playing && !dim;
+  const ink = dim ? unlit : on ? lit : unlit;
+  const text = showText;
+  const box = text ? { x: 42, y: 10, s: 60 } : { x: 20, y: 10, s: 104 };
+  const rect = `x="${box.x}" y="${box.y}" width="${box.s}" height="${box.s}"`;
+  let defs = `
+        <pattern id="pixels" width="2" height="2" patternUnits="userSpaceOnUse">
+          <rect width="2" height="0.5" fill="#000" opacity="0.55"/><rect width="0.5" height="2" fill="#000" opacity="0.55"/>
+        </pattern>`;
+  let body = `<rect ${rect} fill="${ghost}"/>`, over = "";
+  if (art) {
+    over = `<image ${rect} preserveAspectRatio="xMidYMid slice" href="${art}"/>`;
+    if (dim) over += `<rect ${rect} fill="#000" fill-opacity="0.55"/>`;
+  } else {
+    const size = box.s * 0.7;
+    const shape = shapeAt("note", box.x + (box.s - size) / 2, box.y + (box.s - size) / 2, size);
+    body += (on ? glowing(shape, ink) : `<g fill="${ink}">${shape}</g>`) + `<rect ${rect} fill="url(#pixels)"/>`;
+  }
+  if (!playing && !dim) {
+    // Beside the picture when the text leaves room, else in its corner.
+    const at = text ? { x: 108, y: 14 } : { x: box.x + box.s - 26, y: box.y + 2 };
+    const badge = (text ? "" : `<rect x="${at.x - 2}" y="${at.y - 2}" width="28" height="28" fill="${darken(ghost, 0.25)}"/>`) +
+      glowing(shapeAt("pause", at.x, at.y, 24), lit);
+    // Over the picture the badge has to sit above it too.
+    if (art && !text) over += badge; else body += badge;
+  }
+  const textFill = dim ? unlit : lit, glow = dim ? null : "soft";
+  let y = box.y + box.s;
+  if (text) {
+    const t = segmentLine(title, 18, 130, 12);
+    body += segmentText(t.text, 72, y + 24, t.size, { fill: textFill, ghost, glow });
+    if (artist) {
+      const a = segmentLine(artist, 14, 130, 10);
+      body += segmentText(a.text, 72, y + 43, a.size, { fill: textFill, ghost, glow });
+    }
+    y += 51;
+  } else y += 8;
+  body += ladder(progress, { cells: 24, w: 4, gap: 1, x0: 12.5, y, h: 5, ghost, fill: on ? c["Ox.Meter.Fill"] : unlit });
+  return vfdKey(c, body, defs, over);
+}
+
+// The width of a display strip's title, and of its reading and ladder, as
+// layouts/dial-display.json places them.
+export const TITLE_W = 154;
+export const DISPLAY_W = 168;
+
+// A dial strip's glass and frame, the keys' display stretched to the strip.
+export function vfdStrip(c) {
+  const lit = c["Ox.Text.Primary"];
+  return svgUri(`<svg xmlns="http://www.w3.org/2000/svg" width="192" height="92" viewBox="0 0 192 92">
+      <defs>${vfdDefs(lit)}</defs>
+      <rect width="192" height="92" rx="12" fill="${darken(c["Ox.Text.Ghost"], 0.25)}"/>
+      <rect width="192" height="92" rx="12" fill="url(#spill)"/>
+      <rect x="1" y="1" width="190" height="90" rx="11" fill="none" stroke="${darken(lit, 0.3)}" stroke-width="2"/>
+      <rect width="192" height="92" rx="12" fill="url(#mesh)"/>
+    </svg>`);
+}
+
+// A dial strip's title in the segment face over unlit cells; a long one
+// shrinks, then is cut, ending where the reading ends below it.
+export function vfdTitle(c, text, dim = false) {
+  const t = segmentLine(text, 13, TITLE_W - 12, 9);
+  return svgUri(`<svg xmlns="http://www.w3.org/2000/svg" width="${TITLE_W}" height="24" viewBox="0 0 ${TITLE_W} 24">` +
+    segmentText(t.text, 0, 18, t.size, { fill: dim ? c["Ox.Text.Muted"] : c["Ox.Text.Primary"], ghost: c["Ox.Text.Ghost"], anchor: "start" }) +
+    `</svg>`);
+}
+
+// The value as a display shows it: the reading in the segment face at the
+// right, an optional note (the artist) at the left in what room is left, and
+// under them a ladder of cells across the strip lit up to `fraction`. Lit
+// while active, dim while not.
+export function vfdDial(c, fraction, reading, active, note = "") {
+  const ghost = c["Ox.Text.Ghost"], lit = active ? c["Ox.Text.Primary"] : c["Ox.Text.Muted"];
+  const size = reading ? fittedSize(plain(reading), 22, DISPLAY_W - 4) : 22;
+  let text = reading ? segmentText(plain(reading), DISPLAY_W - 2, 28, size, { fill: lit, ghost, anchor: "end", glow: active ? "soft" : null }) : "";
+  if (note) {
+    const room = DISPLAY_W - 4 - (reading ? segmentWidth(plain(reading), size) + 10 : 0);
+    if (room >= 30) {
+      const n = segmentLine(note, 12, room, 8);
+      text += segmentText(n.text, 2, 28, n.size, { fill: c["Ox.Text.Muted"], ghost, anchor: "start" });
+    }
+  }
+  const w = 3, gap = 2, cells = Math.floor((DISPLAY_W + gap) / (w + gap));
+  const x0 = Math.floor((DISPLAY_W - (cells * (w + gap) - gap)) / 2);
+  return svgUri(`<svg xmlns="http://www.w3.org/2000/svg" width="${DISPLAY_W}" height="52" viewBox="0 0 ${DISPLAY_W} 52">
+      <defs>${vfdDefs(lit)}</defs>${text}${ladder(fraction, { cells, w, gap, x0, y: 38, h: 8, ghost, fill: lit })}
+    </svg>`);
 }
 
 // ---------- artwork ----------

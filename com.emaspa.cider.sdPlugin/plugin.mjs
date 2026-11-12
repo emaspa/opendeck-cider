@@ -5,7 +5,9 @@
 import process from "node:process";
 import { spawn } from "node:child_process";
 import { CiderClient, AuthError } from "./cider.mjs";
-import { keyFace, nowPlayingFace, stripIcon, fetchArtwork, formatTime, ACCENT } from "./render.mjs";
+import { fetchArtwork, isDisplay } from "./render.mjs";
+import { keyImage, dialFeedback, displayFeedback } from "./faces.mjs";
+import { SkinPalette } from "./skin-palette.mjs";
 
 const arg = (name) => {
   const i = process.argv.indexOf(name);
@@ -35,13 +37,22 @@ let lastLaunch = 0;
 
 const cider = new CiderClient({ log });
 
+// OpenXLR's skin, read from its settings and followed live. Only a skin that
+// draws a vacuum fluorescent display (VFD Amber, VFD Blue, VFD Classic) changes
+// how Cider looks; with any other skin, or without OpenXLR, Cider keeps its own
+// colours.
+let skin = null;
+try { skin = new SkinPalette(() => scheduleRender()); }
+catch (err) { log(`skin: ${err.message}`); }
+const display = () => (isDisplay(skin?.colours) ? skin.colours : null);
+
 host.onopen = () => {
   send({ event: registerEvent, uuid: pluginUUID });
   send({ event: "getGlobalSettings", context: pluginUUID });
   // Start anyway if the host never answers with global settings.
   setTimeout(() => { if (!globalsLoaded) { globalsLoaded = true; cider.start(); } }, 2000);
 };
-host.onclose = () => { cider.stop(); process.exit(0); };
+host.onclose = () => { cider.stop(); skin?.close(); process.exit(0); };
 
 host.onmessage = (e) => {
   let m;
@@ -60,7 +71,7 @@ host.onmessage = (e) => {
         action: action.slice(PREFIX.length),
         controller: payload?.controller ?? "Keypad",
         settings: payload?.settings ?? {},
-        last: null, lastFeedback: {}, hold: null,
+        last: null, lastFeedback: {}, hold: null, display: false,
       });
       maybeAutoPair();
       wantArtwork();
@@ -287,95 +298,27 @@ function renderAll() {
   }
 }
 
-// What a key shows when it cannot act: Cider off, or not paired yet.
-function statusLines() {
-  const s = cider.state;
-  if (!s.online) return { icon: "power", lines: ["Cider", "not running"] };
-  if (s.auth === "pending") return { icon: "key", lines: ["Approve", "in Cider"], active: true };
-  if (s.auth === "needed" || s.auth === "denied") return { icon: "key", lines: ["Press to", "connect"] };
-  return null;
-}
-
-function keyImage(c) {
-  const s = cider.state;
-  const status = statusLines();
-  if (status) return keyFace({ icon: status.icon, active: status.active, lines: status.lines, dim: !status.active && !s.online });
-  const st = c.settings;
-  const vol = typeof s.volume === "number" ? `${Math.round(s.volume * 100)}%` : "";
-  switch (c.action) {
-    case "playpause": return keyFace({ icon: s.playing ? "pause" : "play", active: s.playing });
-    case "next": return keyFace({ icon: "next" });
-    case "previous": return keyFace({ icon: "previous" });
-    case "shuffle": return keyFace({ icon: "shuffle", active: s.shuffle, lines: [s.shuffle ? "On" : "Off"] });
-    case "repeat": return keyFace({
-      icon: s.repeat === "one" ? "repeatOne" : "repeat", active: s.repeat !== "none",
-      lines: [{ none: "Off", all: "All", one: "One" }[s.repeat]],
-    });
-    case "love": return keyFace({ icon: s.inFavorites ? "heart" : "heartOutline", active: s.inFavorites, dim: !s.track });
-    case "library": return keyFace({ icon: s.inLibrary ? "libraryAdded" : "libraryAdd", active: s.inLibrary, dim: !s.track });
-    case "volumeup": return keyFace({ icon: "volumeUp", lines: [vol] });
-    case "volumedown": return keyFace({ icon: "volumeDown", lines: [vol] });
-    case "mute": return keyFace({ icon: s.volume === 0 ? "volumeOff" : "volumeUp", active: s.volume === 0, lines: [s.volume === 0 ? "Muted" : vol] });
-    case "nowplaying": {
-      const t = s.track;
-      const progress = t && s.time.duration ? Math.round((s.time.current / s.time.duration) * 48) / 48 : 0;
-      return nowPlayingFace({
-        art: t ? art.data : null, title: t?.name ?? "", artist: t?.artist ?? "",
-        progress, playing: s.playing, showText: st.showText !== false,
-      });
-    }
-  }
-  return keyFace({ icon: "note" });
-}
-
 function renderKey(context, c) {
-  const image = keyImage(c);
+  const image = keyImage(c, cider.state, art, display());
   if (image === c.last) return;
   c.last = image;
   send({ event: "setImage", context, payload: { image, target: 0 } });
 }
 
-function dialFeedback(c) {
-  const s = cider.state;
-  const status = statusLines();
-  if (c.action === "dialvolume") {
-    if (status) return {
-      icon: stripIcon(status.icon, status.active ? ACCENT : "#8e8e93"),
-      label: status.lines.join(" "), value: "",
-      indicator: { value: 0, bar_fill_c: "#48484a" },
-    };
-    const muted = s.volume === 0;
-    const pct = typeof s.volume === "number" ? Math.round(s.volume * 100) : 0;
-    return {
-      icon: stripIcon(muted ? "volumeOff" : "volumeUp", muted ? ACCENT : "#f2f2f7"),
-      label: "Volume",
-      value: muted ? "Muted" : `${pct}%`,
-      indicator: { value: pct, bar_fill_c: muted ? "#48484a" : ACCENT },
-    };
-  }
-  // dialtrack
-  if (status) return {
-    art: stripIcon(status.icon, status.active ? ACCENT : "#8e8e93"),
-    track: status.lines[0], artist: status.lines[1], state: stripIcon("note", "#48484a"), time: "",
-    progress: { value: 0 },
-  };
-  const t = s.track;
-  if (!t) return {
-    art: stripIcon("note", "#8e8e93"), track: "Nothing playing", artist: "", state: stripIcon("play", "#48484a"), time: "",
-    progress: { value: 0 },
-  };
-  const pct = s.time.duration ? Math.round((s.time.current / s.time.duration) * 1000) / 10 : 0;
-  return {
-    art: art.small ?? stripIcon("note", "#8e8e93"),
-    track: t.name, artist: t.artist,
-    state: stripIcon(s.playing ? "play" : "pause", s.playing ? ACCENT : "#f2f2f7"),
-    time: `${formatTime(s.time.current)} / ${formatTime(s.time.duration)}`,
-    progress: { value: pct },
-  };
-}
+// The layout a dial shows, by action, when the skin is not a display.
+const DIAL_LAYOUTS = { dialvolume: "layouts/volume.json", dialtrack: "layouts/track.json" };
 
 function renderDial(context, c) {
-  const fb = dialFeedback(c);
+  const vfd = display();
+  // A dial appears in the manifest's layout. A display takes the strip's whole
+  // width with a layout of its own, and leaving one switches back. A switch
+  // resets the strip's items, so everything is sent again.
+  if (!!vfd !== c.display) {
+    c.display = !!vfd;
+    c.lastFeedback = {};
+    send({ event: "setFeedbackLayout", context, payload: { layout: vfd ? "layouts/dial-display.json" : DIAL_LAYOUTS[c.action] } });
+  }
+  const fb = vfd ? displayFeedback(c, cider.state, vfd) : dialFeedback(c, cider.state, art);
   const changed = {};
   for (const [k, v] of Object.entries(fb)) {
     const json = JSON.stringify(v);

@@ -1,0 +1,9 @@
+{
+  "id": "com.emaspa.cider.dial-display-layout",
+  "items": [
+    { "key": "backgroundDial", "type": "pixmap", "rect": [4, 4, 192, 92], "zOrder": 1 },
+    { "key": "icon", "type": "pixmap", "rect": [16, 12, 24, 24], "zOrder": 10 },
+    { "key": "title", "type": "pixmap", "rect": [42, 12, 154, 24], "zOrder": 10 },
+    { "key": "dial", "type": "pixmap", "rect": [16, 44, 168, 52], "zOrder": 20 }
+  ]
+}

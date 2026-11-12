@@ -21,6 +21,10 @@ An [OpenDeck](https://github.com/nekename/OpenDeck) plugin for [Cider](https://c
 
 While Cider is closed, every key shows "Cider not running", and a press starts Cider. The command it runs is `cider` by default. You can change it in the inspector, for example to `flatpak run sh.cider.genten`.
 
+## OpenXLR display skins
+
+With [OpenXLR](https://github.com/emaspa/openxlr) on the VFD Amber, VFD Blue or VFD Classic skin, the keys and dial strips draw as a vacuum fluorescent display, like OpenXLR's own keys. A glyph glows while its state is on and goes dim while it is off. Text uses OpenXLR's segment lettering. The album cover keeps its own colours. Any other skin, or no OpenXLR at all, leaves Cider in its usual red and dark grey. The plugin reads the skin from `~/.config/openxlr/ui.json`, or from the `OPENXLR_SKIN` environment variable when that is set, and redraws when the skin changes.
+
 ## Requirements
 
 - Cider 4 with its RPC server on `127.0.0.1:10767` (the default).
@@ -60,7 +64,7 @@ npm run build       # regenerate icons/ and manifest.json
 
 `tools/make-manifest.mjs` generates `manifest.json`, and the version comes from `package.json`. Plugin logs are in `~/.local/share/opendeck/logs/plugins/com.emaspa.cider.sdPlugin.log`.
 
-Glyphs are Material Icons paths (Apache 2.0).
+Glyphs are Material Icons paths (Apache 2.0). `skin-palette.mjs`, `skin-palettes.json`, `segment-text.mjs` and `segment-font.json` are copied from OpenXLR. The segment face derives from DSEG and is under the SIL Open Font License 1.1, in `segment-font-OFL.txt`.
 
 ## License
 

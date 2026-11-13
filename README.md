@@ -61,3 +61,7 @@ npm run build       # regenerate icons/ and manifest.json
 `tools/make-manifest.mjs` generates `manifest.json`, and the version comes from `package.json`. Plugin logs are in `~/.local/share/opendeck/logs/plugins/com.emaspa.cider.sdPlugin.log`.
 
 Glyphs are Material Icons paths (Apache 2.0).
+
+## License
+
+GPL-3.0-only, see [LICENSE](LICENSE).

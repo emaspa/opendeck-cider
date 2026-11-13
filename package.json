@@ -4,7 +4,7 @@
   "description": "OpenDeck plugin for Cider, the Apple Music client",
   "private": true,
   "type": "module",
-  "license": "MIT",
+  "license": "GPL-3.0-only",
   "scripts": {
     "build": "node tools/make-icons.mjs && node tools/make-manifest.mjs",
     "test": "node --test test/",

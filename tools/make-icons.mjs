@@ -6,7 +6,7 @@ import { GLYPHS, ACCENT } from "../com.emaspa.cider.sdPlugin/render.mjs";
 const dir = new URL("../com.emaspa.cider.sdPlugin/icons/", import.meta.url);
 const plain = (g) => `<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24"><path d="${GLYPHS[g]}" fill="#ffffff"/></svg>\n`;
 const icons = {
-  playpause: "play", next: "next", previous: "previous", nowplaying: "note",
+  playpause: "play", next: "next", previous: "previous", nowplaying: "note", cover: "album", trackinfo: "subject",
   shuffle: "shuffle", repeat: "repeat", love: "heartOutline", library: "libraryAdd",
   volumeup: "volumeUp", volumedown: "volumeDown", mute: "volumeOff",
   dialvolume: "volumeUp", dialtrack: "note", category: "note",

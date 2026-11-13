@@ -10,6 +10,8 @@ An [OpenDeck](https://github.com/nekename/OpenDeck) plugin for [Cider](https://c
 | Next Track | next glyph | skip; hold to fast-forward |
 | Previous Track | previous glyph | previous; hold to rewind |
 | Now Playing | album art, title, artist, progress line, pause badge | play/pause, next, or nothing (set in the inspector) |
+| Album Cover | the album cover alone, edge to edge | play/pause, next, or nothing (set in the inspector) |
+| Track Info | title, artist, time played, track length, progress bar | play/pause, next, or nothing (set in the inspector) |
 | Shuffle | lit when on | toggle |
 | Repeat | off / all / one | cycle off, all, one |
 | Love | filled heart when loved | love, or clear the rating |
@@ -23,7 +25,7 @@ While Cider is closed, every key shows "Cider not running", and a press starts C
 
 ## OpenXLR display skins
 
-With [OpenXLR](https://github.com/emaspa/openxlr) on the VFD Amber, VFD Blue or VFD Classic skin, the keys and dial strips draw as a vacuum fluorescent display, like OpenXLR's own keys. A glyph glows while its state is on and goes dim while it is off. Text uses OpenXLR's segment lettering. The album cover keeps its own colours. Any other skin, or no OpenXLR at all, leaves Cider in its usual red and dark grey. The plugin reads the skin from `~/.config/openxlr/ui.json`, or from the `OPENXLR_SKIN` environment variable when that is set, and redraws when the skin changes.
+With [OpenXLR](https://github.com/emaspa/openxlr) on the VFD Amber, VFD Blue or VFD Classic skin, the keys and dial strips draw as a vacuum fluorescent display, like OpenXLR's own keys. A glyph glows while its state is on and goes dim while it is off. Text uses OpenXLR's segment lettering. The album cover keeps its own colours, and the Album Cover key shows it with nothing drawn over it. Any other skin, or no OpenXLR at all, leaves Cider in its usual red and dark grey. The plugin reads the skin from `~/.config/openxlr/ui.json`, or from the `OPENXLR_SKIN` environment variable when that is set, and redraws when the skin changes.
 
 ## Requirements
 

@@ -34,6 +34,8 @@ const manifest = {
     key("next", "Next Track", "Skip to the next track; hold to fast-forward"),
     key("previous", "Previous Track", "Go to the previous track; hold to rewind"),
     key("nowplaying", "Now Playing", "Album artwork with title, artist and progress", { UserTitleEnabled: false }),
+    key("cover", "Album Cover", "The album cover of the current song, and nothing else", { UserTitleEnabled: false }),
+    key("trackinfo", "Track Info", "Title, artist, playing time and progress of the current song", { UserTitleEnabled: false }),
     key("shuffle", "Shuffle", "Toggle shuffle"),
     key("repeat", "Repeat", "Cycle repeat: off, all, one"),
     key("love", "Love", "Love the current track, or remove the love"),

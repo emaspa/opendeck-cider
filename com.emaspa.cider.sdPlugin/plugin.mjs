@@ -201,7 +201,9 @@ function keyDown(context) {
     case "playpause": run(context, cider.togglePlay()); break;
     case "next":
     case "previous": startHold(context, c); break;
-    case "nowplaying": {
+    case "nowplaying":
+    case "cover":
+    case "trackinfo": {
       const press = st.press ?? "toggle";
       if (press === "toggle") run(context, cider.togglePlay());
       else if (press === "next") run(context, cider.next());
@@ -272,7 +274,7 @@ function wantArtwork() {
   if (url === art.url) return;
   art = { url, data: null };
   if (!url) return;
-  const needs = [...contexts.values()].some((c) => c.action === "nowplaying" || c.action === "dialtrack");
+  const needs = [...contexts.values()].some((c) => c.action === "nowplaying" || c.action === "cover" || c.action === "dialtrack");
   if (!needs) { art.url = ""; return; }
   Promise.all([fetchArtwork(url, 288), fetchArtwork(url, 96)]).then(([big, small]) => {
     if (art.url !== url) return;

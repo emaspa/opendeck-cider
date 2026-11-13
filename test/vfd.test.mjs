@@ -75,6 +75,26 @@ test("the now playing display keeps the original cover", () => {
   assert.match(paused, /d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/);
 });
 
+test("the cover key stays the bare cover on a display skin", () => {
+  const art = { data: "data:image/png;base64,AAAA" };
+  const s = playing();
+  const cover = keyImage({ action: "cover", settings: {} }, s, art, amber);
+  assert.equal(cover, keyImage({ action: "cover", settings: {} }, s, art, null));
+  assert.doesNotMatch(decode(cover), /mesh/);
+});
+
+test("the track info display letters the song and lights the time while playing", () => {
+  const on = decode(keyImage({ action: "trackinfo", settings: {} }, playing(), {}, amber));
+  assert.match(on, /url\(#mesh\)/);
+  assert.doesNotMatch(on, /<text/);
+  // The ladder's lit cells glow in the meter colour while playing, unlit while paused.
+  const litLadder = new RegExp(`filter="url\\(#halo\\)" opacity="0.8" color="${amber["Ox.Meter.Fill"]}"`);
+  assert.match(on, litLadder);
+  const paused = decode(keyImage({ action: "trackinfo", settings: {} }, { ...playing(), playing: false }, {}, amber));
+  assert.doesNotMatch(paused, litLadder);
+  assert.match(paused, new RegExp(`color="${amber["Ox.Text.Muted"]}"`));
+});
+
 test("display strips feed exactly the display layout's items", () => {
   const layout = JSON.parse(fs.readFileSync(new URL("layouts/dial-display.json", plugin), "utf8"));
   const keys = layout.items.map((i) => i.key).sort();

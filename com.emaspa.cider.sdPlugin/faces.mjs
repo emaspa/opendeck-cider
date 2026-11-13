@@ -2,7 +2,7 @@
 // state (cider.mjs), `art` the fetched artwork ({ data, small }), and `vfd`
 // the OpenXLR skin's colours when that skin draws a display, else null.
 
-import { keyFace, nowPlayingFace, stripIcon, formatTime, ACCENT, vfdStrip, vfdTitle, vfdDial } from "./render.mjs";
+import { keyFace, nowPlayingFace, coverFace, trackInfoFace, stripIcon, formatTime, ACCENT, vfdStrip, vfdTitle, vfdDial } from "./render.mjs";
 
 // What a key shows when it cannot act: Cider off, or not paired yet.
 function statusLines(s) {
@@ -37,6 +37,15 @@ export function keyImage(c, s, art = {}, vfd = null) {
       return nowPlayingFace({
         art: t ? art.data : null, title: t?.name ?? "", artist: t?.artist ?? "",
         progress, playing: s.playing, showText: st.showText !== false, vfd,
+      });
+    }
+    case "cover": return coverFace({ art: s.track ? art.data : null, vfd });
+    case "trackinfo": {
+      const t = s.track;
+      // Whole seconds, so the key redraws once a second at most.
+      return trackInfoFace({
+        title: t?.name ?? "", artist: t?.artist ?? "", current: Math.floor(s.time.current),
+        duration: Math.round(s.time.duration), playing: s.playing, vfd,
       });
     }
   }

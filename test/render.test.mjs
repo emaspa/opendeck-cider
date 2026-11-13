@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { fit, formatTime, escapeXml, keyFace, nowPlayingFace, artworkUrl } from "../com.emaspa.cider.sdPlugin/render.mjs";
+import { fit, formatTime, escapeXml, keyFace, nowPlayingFace, coverFace, trackInfoFace, wrap, artworkUrl } from "../com.emaspa.cider.sdPlugin/render.mjs";
 
 const decode = (uri) => Buffer.from(uri.split(",")[1], "base64").toString();
 
@@ -37,4 +37,32 @@ test("paused now playing shows the pause badge", () => {
 
 test("artwork url placeholders", () => {
   assert.equal(artworkUrl("https://a/{w}x{h}bb.{f}", 288), "https://a/288x288bb.jpg");
+});
+
+test("the cover key is the cover alone", () => {
+  const svg = decode(coverFace({ art: "data:image/png;base64,AAAA" }));
+  assert.match(svg, /<image href="data:image\/png;base64,AAAA" x="0" y="0" width="144" height="144"/);
+  assert.doesNotMatch(svg, /<text|<rect|<path/);
+  assert.match(decode(coverFace({})), /<path/);
+});
+
+test("titles wrap onto two lines, hyphenating a word too long for one", () => {
+  assert.deepEqual(wrap("Hey Jude", 18, 130), ["Hey Jude"]);
+  assert.deepEqual(wrap("Sunset Boulevard", 18, 130), ["Sunset", "Boulevard"]);
+  const long = wrap("An Extraordinarily Long Song Title", 18, 130);
+  assert.equal(long.length, 2);
+  assert.ok(long[0].endsWith("-"));
+  assert.ok(long[1].endsWith("…"));
+});
+
+test("the track info key shows the time played, the length and the progress", () => {
+  const on = decode(trackInfoFace({ title: "Song", artist: "Band", current: 83, duration: 245, playing: true }));
+  assert.match(on, />Song</);
+  assert.match(on, />Band</);
+  assert.match(on, />1:23</);
+  assert.match(on, />4:05</);
+  assert.match(on, /width="43" height="6" rx="3" fill="#fa2d48"/);
+  const paused = decode(trackInfoFace({ title: "Song", current: 83, duration: 245, playing: false }));
+  assert.match(paused, /d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/);
+  assert.doesNotMatch(paused, /fill="#fa2d48"/);
 });

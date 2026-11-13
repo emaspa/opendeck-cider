@@ -81,6 +81,40 @@
 			"UserTitleEnabled": false
 		},
 		{
+			"Name": "Album Cover",
+			"UUID": "com.emaspa.cider.cover",
+			"Icon": "icons/cover",
+			"Tooltip": "The album cover of the current song, and nothing else",
+			"Controllers": [
+				"Keypad"
+			],
+			"SupportedInMultiActions": true,
+			"PropertyInspectorPath": "propertyInspector/settings.html",
+			"States": [
+				{
+					"Image": "icons/cover"
+				}
+			],
+			"UserTitleEnabled": false
+		},
+		{
+			"Name": "Track Info",
+			"UUID": "com.emaspa.cider.trackinfo",
+			"Icon": "icons/trackinfo",
+			"Tooltip": "Title, artist, playing time and progress of the current song",
+			"Controllers": [
+				"Keypad"
+			],
+			"SupportedInMultiActions": true,
+			"PropertyInspectorPath": "propertyInspector/settings.html",
+			"States": [
+				{
+					"Image": "icons/trackinfo"
+				}
+			],
+			"UserTitleEnabled": false
+		},
+		{
 			"Name": "Shuffle",
 			"UUID": "com.emaspa.cider.shuffle",
 			"Icon": "icons/shuffle",

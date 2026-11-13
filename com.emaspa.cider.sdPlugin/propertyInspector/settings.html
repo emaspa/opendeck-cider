@@ -18,13 +18,16 @@
   .hint { color: #8b93a7; line-height: 1.4; margin-top: 6px; }
 </style></head>
 <body>
-  <div class="section" data-for="nowplaying" hidden>
+  <div class="section" data-for="nowplaying cover trackinfo" hidden>
     <label for="press">When pressed</label>
     <select id="press" data-setting="press">
       <option value="toggle">Play / pause</option>
       <option value="next">Next track</option>
       <option value="none">Nothing</option>
     </select>
+  </div>
+
+  <div class="section" data-for="nowplaying" hidden>
     <label class="inline"><input type="checkbox" id="showText" data-setting="showText" checked> Show title and artist</label>
   </div>
 

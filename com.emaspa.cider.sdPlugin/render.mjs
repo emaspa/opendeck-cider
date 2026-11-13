@@ -30,6 +30,8 @@ export const GLYPHS = {
   volumeDown: "M18.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM5 9v6h4l5 5V4L9 9H5z",
   volumeOff: "M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z",
   note: "M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z",
+  album: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 14.5c-2.49 0-4.5-2.01-4.5-4.5S9.51 7.5 12 7.5s4.5 2.01 4.5 4.5-2.01 4.5-4.5 4.5zm0-5.5c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1z",
+  subject: "M14 17H4v2h10v-2zm6-8H4v2h16V9zM4 15h16v-2H4v2zM4 5v2h16V5H4z",
   key: "M12.65 10C11.83 7.67 9.61 6 7 6c-3.31 0-6 2.69-6 6s2.69 6 6 6c2.61 0 4.83-1.67 5.65-4H17v4h4v-4h2v-4H12.65zM7 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z",
   power: "M13 3h-2v10h2V3zm4.83 2.17l-1.42 1.42C17.99 7.86 19 9.81 19 12c0 3.87-3.13 7-7 7s-7-3.13-7-7c0-2.19 1.01-4.14 2.58-5.42L6.17 5.17C4.23 6.82 3 9.26 3 12c0 4.97 4.03 9 9 9s9-4.03 9-9c0-2.74-1.23-5.18-3.17-6.83z",
 };
@@ -97,6 +99,62 @@ export function nowPlayingFace({ art, title, artist, progress = 0, playing = tru
   if (title && !playing)
     body += `<circle cx="120" cy="24" r="17" fill="#000" fill-opacity="0.6"/>` + glyph("pause", 108, 12, 24, "#fff");
   if (dim) body += `<rect width="144" height="144" fill="#000" fill-opacity="0.55"/>`;
+  return svgUri(`<svg xmlns="http://www.w3.org/2000/svg" width="288" height="288" viewBox="0 0 144 144">${body}</svg>`);
+}
+
+// The cover key: the album cover filling the key with nothing over it, in its
+// own colours on every skin. Without a track it shows an unlit note.
+export function coverFace({ art, vfd = null } = {}) {
+  if (!art) return keyFace({ icon: "note", dim: true, vfd });
+  return svgUri(`<svg xmlns="http://www.w3.org/2000/svg" width="288" height="288" viewBox="0 0 144 144">` +
+    `<image href="${art}" x="0" y="0" width="144" height="144" preserveAspectRatio="xMidYMid slice"/></svg>`);
+}
+
+// Breaks text into at most `max` lines of roughly `maxWidth` px at `size` px,
+// at spaces where it can; the last line ends in an ellipsis if text is left.
+export function wrap(text, size, maxWidth, max = 2) {
+  const room = Math.max(1, Math.floor(maxWidth / (size * 0.56)));
+  const words = String(text ?? "").split(/\s+/).filter(Boolean);
+  const lines = [];
+  let line = "";
+  while (words.length && lines.length < max) {
+    const word = words[0];
+    const next = line ? `${line} ${word}` : word;
+    if (next.length <= room) { line = next; words.shift(); continue; }
+    // A word longer than a line breaks with a hyphen where the line ends.
+    if (word.length > room) {
+      const cut = room - 1 - (line ? line.length + 1 : 0);
+      if (cut >= 3) { line = next.slice(0, room - 1) + "-"; words[0] = word.slice(cut); }
+    }
+    lines.push(line);
+    line = "";
+  }
+  if (line && lines.length < max) lines.push(line);
+  if (words.length) lines[lines.length - 1] = fit(`${lines[lines.length - 1]} ${words.join(" ")}`, size, maxWidth);
+  return lines;
+}
+
+// The track info key: title (up to two lines) and artist, then the time
+// played and the track's length over a progress bar. The bar is red while
+// playing; while paused it greys and a pause glyph leads the time played.
+export function trackInfoFace({ title, artist, current = 0, duration = 0, playing = true, vfd = null } = {}) {
+  if (vfd) return vfdTrackInfoFace(vfd, { title, artist, current, duration, playing });
+  if (!title) return keyFace({ icon: "note", dim: true });
+  const lines = wrap(title, 18, 130, 2);
+  let body = `<rect width="144" height="144" fill="${BG}"/>`;
+  const top = lines.length > 1 ? 30 : 38;
+  lines.forEach((line, i) => {
+    body += `<text x="8" y="${top + i * 22}" font-family="${FONT}" font-size="18" font-weight="700" fill="${INK}">${escapeXml(line)}</text>`;
+  });
+  if (artist) body += `<text x="8" y="${top + lines.length * 22 + 2}" font-family="${FONT}" font-size="14" fill="${MUTED}">${escapeXml(fit(artist, 14, 134))}</text>`;
+  const time = (x, anchor, text, fill) =>
+    `<text x="${x}" y="112" text-anchor="${anchor}" font-family="${FONT}" font-size="15" font-weight="600" fill="${fill}">${text}</text>`;
+  if (!playing) body += glyph("pause", 4, 99, 16, MUTED);
+  body += time(playing ? 8 : 21, "start", formatTime(current), playing ? INK : MUTED);
+  if (duration) body += time(136, "end", formatTime(duration), MUTED);
+  const fraction = duration ? Math.max(0, Math.min(1, current / duration)) : 0;
+  body += `<rect x="8" y="122" width="128" height="6" rx="3" fill="#3a3a3c"/>`;
+  if (fraction > 0) body += `<rect x="8" y="122" width="${Math.max(6, Math.round(fraction * 128))}" height="6" rx="3" fill="${playing ? ACCENT : MUTED}"/>`;
   return svgUri(`<svg xmlns="http://www.w3.org/2000/svg" width="288" height="288" viewBox="0 0 144 144">${body}</svg>`);
 }
 
@@ -257,6 +315,30 @@ function vfdNowPlayingFace(c, { art, title, artist, progress, playing, showText,
   } else y += 8;
   body += ladder(progress, { cells: 24, w: 4, gap: 1, x0: 12.5, y, h: 5, ghost, fill: on ? c["Ox.Meter.Fill"] : unlit });
   return vfdKey(c, body, defs, over);
+}
+
+// The track info key as a display: title and artist in segment lettering, the
+// time played lit large with the track's length beside it, and a ladder of
+// cells for the position. While paused the time and ladder go unlit.
+function vfdTrackInfoFace(c, { title, artist, current, duration, playing }) {
+  const ghost = c["Ox.Text.Ghost"], lit = c["Ox.Text.Primary"], unlit = c["Ox.Text.Muted"];
+  if (!title) return vfdKey(c, `<g fill="${unlit}">${shapeAt("note", 36, 36, 72)}</g>`);
+  const ink = playing ? lit : unlit, glow = playing ? "soft" : null;
+  const t = segmentLine(title, 18, 122, 9);
+  let body = segmentText(t.text, 72, 38, t.size, { fill: lit, ghost, glow: "soft" });
+  if (artist) {
+    const a = segmentLine(artist, 14, 122, 9);
+    body += segmentText(a.text, 72, 62, a.size, { fill: lit, ghost, glow: "soft" });
+  }
+  const length = duration ? plain(formatTime(duration)) : "";
+  const lengthSize = length ? fittedSize(length, 13, 44) : 0;
+  const played = plain(formatTime(current));
+  const room = 120 - (length ? segmentWidth(length, lengthSize) + 8 : 0);
+  body += segmentText(played, 12, 100, fittedSize(played, 24, room), { fill: ink, ghost, anchor: "start", glow });
+  if (length) body += segmentText(length, 132, 100, lengthSize, { fill: unlit, ghost, anchor: "end" });
+  const fraction = duration ? current / duration : 0;
+  body += ladder(fraction, { cells: 24, w: 4, gap: 1, x0: 12.5, y: 112, h: 6, ghost, fill: playing ? c["Ox.Meter.Fill"] : unlit });
+  return vfdKey(c, body);
 }
 
 // The width of a display strip's title, and of its reading and ladder, as
